@@ -1,0 +1,203 @@
+openapi: 3.0.0
+info:
+  title: AI Studio API
+  version: 1.0.0
+  description: API for AI Studio - Fashion Image Generation Platform
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+
+paths:
+  /auth/signup:
+    post:
+      summary: Create a new user account
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error
+        '409':
+          description: User already exists
+
+  /auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+        '400':
+          description: Validation error
+
+  /generations:
+    post:
+      summary: Create a new generation
+      tags:
+        - Generations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - prompt
+                - style
+                - imageUpload
+              properties:
+                prompt:
+                  type: string
+                style:
+                  type: string
+                  enum: [vintage, modern, casual, formal]
+                imageUpload:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Generation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generation'
+        '400':
+          description: Validation error or model overloaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Model overloaded
+        '401':
+          description: Unauthorized
+
+    get:
+      summary: Get user's recent generations
+      tags:
+        - Generations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+            maximum: 5
+      responses:
+        '200':
+          description: List of generations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Generation'
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Generation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        imageUrl:
+          type: string
+          format: uri
+        prompt:
+          type: string
+        style:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, completed, failed]
+
