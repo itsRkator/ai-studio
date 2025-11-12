@@ -20,7 +20,7 @@ A mini AI Studio web application for fashion image generation with user authenti
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24+ (LTS)
 - PostgreSQL 16+
 - npm or yarn
 
